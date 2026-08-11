@@ -8,6 +8,9 @@ ddgs>=9.0.0
 yfinance>=0.2.0
 itsdangerous>=2.0.0
 edge-tts>=6.1.0
+lancedb>=0.5.0
+pypdf>=3.0.0
+
 
 
 

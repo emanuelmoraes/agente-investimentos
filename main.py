@@ -1,12 +1,14 @@
 """ Agente para gestão de investimentos """
 
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.google import Gemini
-import os
-from dotenv import load_dotenv
 from agno.db.sqlite import SqliteDb
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.yfinance import YFinanceTools
+from agno.knowledge.filesystem import FileSystemKnowledge
 
 load_dotenv()
 
@@ -28,6 +30,13 @@ class SafeDuckDuckGoTools(DuckDuckGoTools):
             return f"Nenhum resultado encontrado nas notícias web para: '{query}'."
 
 
+# RAG Knowledge Base configuration (FileSystemKnowledge)
+DOCUMENTS_DIR = Path("data/documents")
+if not DOCUMENTS_DIR.exists():
+    DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+knowledge_base = FileSystemKnowledge(base_dir=str(DOCUMENTS_DIR))
+
 storage = SqliteDb(db_file="data/agent_storage.db")
 
 agente = Agent(
@@ -43,10 +52,11 @@ agente = Agent(
     - Diversificação da carteira
     - Rentabilidade histórica
     - Risco associado
-    Use as ferramentas de busca web (DuckDuckGo) e de dados financeiros (YFinance) para buscar dados atualizados do mercado e cotações de ações em tempo real sempre que solicitado ou relevante.
+    Use a base de conhecimento RAG (documentos internos em data/documents), busca web (DuckDuckGo) e dados financeiros (YFinance) para responder com precisão.
     Para ações/FIIs brasileiros no YFinance, adicione o sufixo '.SA' ao ticker (ex: BBIG11.SA, PETR4.SA).
     """,
     model=Gemini("gemini-3.5-flash"),
+    knowledge=knowledge_base,
     tools=[
         SafeDuckDuckGoTools(),
         YFinanceTools(
@@ -57,13 +67,11 @@ agente = Agent(
         )
     ],
     markdown=True,
-
     db=storage,
     session_id="investimentos",
     add_history_to_context=True,
     num_history_runs=500
 )
-
 
 
 if __name__ == "__main__":
@@ -88,4 +96,3 @@ if __name__ == "__main__":
             break
         except Exception as exc:
             print("Error executing query: %s", exc)
-

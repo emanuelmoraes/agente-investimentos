@@ -6,15 +6,15 @@ Um agente virtual inteligente especializado em **análise de carteiras de invest
 
 ## 🚀 Funcionalidades Principais
 
-- **🤖 Inteligência Financeira (Agno + Gemini 3.5 Flash):** Análise personalizada considerando o perfil de risco do usuário (conservador, moderado, arrojado) e seus objetivos de investimento.
+- **📚 Base de Conhecimento (RAG):** Consulta documentos internos (relatórios em PDF, arquivos de texto ou diretrizes em `data/documents/`) para fundamentar as respostas do agente.
 - **🌐 Ferramentas em Tempo Real (Tools):**
   - **DuckDuckGo (`DuckDuckGoTools`):** Realiza buscas na internet sobre o mercado financeiro em tempo real sem necessidade de chave de API.
   - **Yahoo Finance (`YFinanceTools`):** Consulta cotações de ações/FIIs na B3 (com sufixo `.SA`) e no mercado internacional, notícias de empresas e recomendações de analistas.
 - **🖼️ Interface Multimodal & Voz (Gradio):** Aceita envio de texto, anexos de arquivos, **colagem direta de imagens (Ctrl+V)** e **gravação de áudio pelo microfone**.
 - **🔊 Síntese de Voz (TTS Neural):** Converte as respostas do agente em áudio falado em Português (`pt-BR-AntonioNeural` via `edge-tts`) com reprodução automática.
 - **🔐 Autenticação de Usuários & Logout:** Tela visual de login e botão de **Sair/Logout** para alternar contas com segurança.
-
 - **💾 Memória Persistente Isolada por Usuário (SQLite):** Armazena o histórico no banco de dados (`data/agent_storage.db`), garantindo que cada usuário (`investimentos_<username>`) veja apenas suas próprias conversas.
+
 
 ---
 

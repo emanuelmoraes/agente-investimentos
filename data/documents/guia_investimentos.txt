@@ -1,0 +1,17 @@
+===================================================================
+ GUIA E DIRETRIZES INTERNAS DE INVESTIMENTOS E ANÁLISE DE CARTEIRAS
+===================================================================
+
+1. REGRAS DE REBALANCEMENTO E ALOCAÇÃO POR PERFIL:
+- Perfil Conservador: 70% a 80% em Renda Fixa (Tesouro Direto, CDBs de bancos sólidos), 15% a 20% em FIIs de tijolo de alta liquidez e no máximo 5% a 10% em Ações pagadoras de dividendos.
+- Perfil Moderado: 40% a 50% em Renda Fixa, 30% a 40% em FIIs (Tijolo e Papel diversificados) e 20% a 30% em Ações de empresas consolidadas (blue chips).
+- Perfil Arrojado: 20% a 30% em Renda Fixa (reserva de oportunidade), 30% em FIIs e 40% a 50% em Ações (incluindo Small Caps e BDRs).
+
+2. CRITÉRIOS DE AVALIAÇÃO DE FUNDOS IMOBILIÁRIOS (FIIs):
+- Vacância física e financeira idealmente abaixo de 10%.
+- Diversificação de inquilinos e contratos atípicos de longo prazo.
+- Preço sobre Valor Patrimonial (P/VP) idealmente entre 0,85 e 1,05.
+
+3. REGRAS DE GESTÃO DE RISCO:
+- Nunca alocar mais de 10% do patrimônio total em um único ativo individual.
+- Manter uma reserva de emergência equivalente a no mínimo 6 meses de custo de vida em Tesouro SELIC ou CDB com liquidez diária.
