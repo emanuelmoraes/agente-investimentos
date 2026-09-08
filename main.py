@@ -7,8 +7,9 @@ from agno.agent import Agent
 from agno.models.google import Gemini
 from agno.db.sqlite import SqliteDb
 from agno.tools.duckduckgo import DuckDuckGoTools
-from agno.tools.yfinance import YFinanceTools
-from agno.knowledge.filesystem import FileSystemKnowledge
+from agno.knowledge.embedder.google import GeminiEmbedder
+from agno.vectordb.lancedb import LanceDb, SearchType
+from agno.knowledge.agent import AgentKnowledge
 
 from prompts import (
     INVESTMENT_AGENT_DESCRIPTION,
@@ -35,12 +36,22 @@ class SafeDuckDuckGoTools(DuckDuckGoTools):
             return f"Nenhum resultado encontrado nas notícias web para: '{query}'."
 
 
-# RAG Knowledge Base configuration (FileSystemKnowledge)
-DOCUMENTS_DIR = Path("data/documents")
+# RAG Vector Knowledge Base configuration (LanceDb + GeminiEmbedder)
+DOCUMENTS_DIR: Path = Path("data/documents")
+LANCE_DB_DIR: str = "data/lancedb"
+TABLE_NAME: str = "investimentos_knowledge"
+
 if not DOCUMENTS_DIR.exists():
     DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-knowledge_base = FileSystemKnowledge(base_dir=str(DOCUMENTS_DIR))
+vector_db = LanceDb(
+    table_name=TABLE_NAME,
+    uri=LANCE_DB_DIR,
+    search_type=SearchType.vector,
+    embedder=GeminiEmbedder()
+)
+
+knowledge_base = AgentKnowledge(vector_db=vector_db)
 
 storage = SqliteDb(db_file="data/agent_storage.db")
 
@@ -50,6 +61,7 @@ agente = Agent(
     instructions=INVESTMENT_AGENT_INSTRUCTIONS,
     model=Gemini("gemini-3.5-flash"),
     knowledge=knowledge_base,
+    search_knowledge=True,
     tools=[
         SafeDuckDuckGoTools(),
         YFinanceTools(
@@ -59,6 +71,7 @@ agente = Agent(
             enable_analyst_recommendations=True
         )
     ],
+
     markdown=True,
     db=storage,
     session_id="investimentos",

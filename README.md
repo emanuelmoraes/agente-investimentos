@@ -76,24 +76,26 @@ python app.py
 ```
 Acesse no seu navegador: **[http://127.0.0.1:7860](http://127.0.0.1:7860)**
 
-#### Credenciais de Teste:
-| Usuário | Senha |
-| :--- | :--- |
-| `admin` | `admin123` |
-| `investidor` | `investidor123` |
-
 ### 2. Interface via Linha de Comando (CLI)
 ```bash
 python main.py
 ```
 
-### 3. Ingestão de Documentos para RAG (Opcional)
-Para alimentar o agente com relatórios, artigos ou carteiras recomendadas:
-1. Coloque seus arquivos (`.pdf`, `.txt`, `.md`) no diretório `data/documents/`.
-2. Execute o pipeline de vetorização para indexar no LanceDB:
+### 3. Base de Conhecimento e Ingestão RAG (Opcional)
+Para alimentar o agente com livros, relatórios de research, teses ou carteiras recomendadas:
+1. Coloque seus arquivos nos formatos `.pdf`, `.txt` ou `.md` dentro do diretório `data/documents/`.
+2. Execute o pipeline de vetorização para indexar no **LanceDB** com embeddings do Gemini:
    ```bash
    python ingest.py
    ```
+
+#### 🔄 Atualização, Inclusão ou Remoção de Documentos:
+O LanceDB armazena os embeddings gerados. Ao **adicionar novos arquivos**, **substituir** ou **remover documentos antigos** da pasta `data/documents/`, utilize a flag `--recreate` para limpar a base vetorial anterior e reconstruir os índices do zero:
+```bash
+python ingest.py --recreate
+```
+> **Nota:** Usar `--recreate` garante que documentos deletados não permaneçam no índice vetorial e evita fragmentos duplicados.
+
 
 ---
 
