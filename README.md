@@ -87,19 +87,33 @@ Acesse no seu navegador: **[http://127.0.0.1:7860](http://127.0.0.1:7860)**
 python main.py
 ```
 
+### 3. Ingestão de Documentos para RAG (Opcional)
+Para alimentar o agente com relatórios, artigos ou carteiras recomendadas:
+1. Coloque seus arquivos (`.pdf`, `.txt`, `.md`) no diretório `data/documents/`.
+2. Execute o pipeline de vetorização para indexar no LanceDB:
+   ```bash
+   python ingest.py
+   ```
+
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
 agente-investimentos/
-├── .env                  # Chaves de API (não versionado)
-├── .gitignore            # Regras de ignorar arquivos do Git
-├── app.py                # Aplicação da Interface Web Gradio (Login, Logout, Chat)
-├── main.py               # Configuração do Agente Agno (Tools, Gemini, SQLite)
-├── requirements.txt      # Dependências do projeto Python
-└── data/
-    └── agent_storage.db  # Banco de dados SQLite contendo as sessões (gerado automaticamente)
+├── .env                     # Variáveis de ambiente e secrets (não versionado)
+├── .gitignore               # Regras de exclusão do Git
+├── app.py                   # Aplicação Web Gradio (Multimodal, Voz, Chat, Sessões)
+├── main.py                  # Definição do Agente Agno (Tools, Gemini, Knowledge, CLI)
+├── ingest.py                # Pipeline de ingestão/vetorização (LanceDB + Gemini Embedder)
+├── requirements.txt         # Dependências Python do projeto
+├── prompts/                 # Diretrizes e system prompts tipados do agente
+│   ├── __init__.py
+│   └── investment_agent.py
+└── data/                    # Dados locais e runtime (ignorado pelo Git)
+    ├── documents/           # Pasta de entrada para documentos RAG (PDF, TXT, MD)
+    ├── lancedb/             # Vector Database gerado pelo ingest.py
+    └── agent_storage.db     # Banco SQLite com sessões e histórico de conversas
 ```
 
 ---
@@ -107,3 +121,4 @@ agente-investimentos/
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Sinta-se livre para usar e modificar!
+
