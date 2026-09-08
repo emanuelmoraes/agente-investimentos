@@ -10,12 +10,6 @@ import edge_tts
 from agno.media import Image, Audio
 from main import agente, storage
 
-# Test user credentials
-VALID_CREDENTIALS: dict[str, str] = {
-    "admin": "admin123",
-    "investidor": "investidor123"
-}
-
 
 def extract_text_content(val: Any) -> str:
     """
@@ -43,7 +37,6 @@ def generate_voice_response(text: str) -> str | None:
     if not text or not text.strip():
         return None
     try:
-        # Clean markdown elements for natural speech reading
         clean_text: str = text.replace("*", "").replace("#", "").replace("`", "").replace("~", "").strip()
         if len(clean_text) > 500:
             clean_text = clean_text[:500] + "... Para a resposta completa, confira o texto no chat."
@@ -61,14 +54,11 @@ def generate_voice_response(text: str) -> str | None:
         return None
 
 
-def get_saved_history_by_user(username: str) -> list[dict[str, Any]]:
+def get_saved_history(session_id: str = "investimentos") -> list[dict[str, Any]]:
     """
-    Retrieve stored chat history from Agno's SqliteDb for a specific user session.
+    Retrieve stored chat history from Agno's SqliteDb.
     """
-    if not username:
-        return []
     try:
-        session_id: str = f"investimentos_{username}"
         session = storage.get_session(session_id=session_id)
         if not session:
             return []
@@ -82,61 +72,8 @@ def get_saved_history_by_user(username: str) -> list[dict[str, Any]]:
                 
         return history
     except Exception as exc:
-        print(f"Error loading chat history for {username}: {exc}")
+        print(f"Error loading chat history: {exc}")
         return []
-
-
-def login_action(username_input: str, password_input: str):
-    """
-    Validate user login and load past chat history.
-    """
-    user = (username_input or "").strip()
-    password = (password_input or "").strip()
-
-    if user in VALID_CREDENTIALS and VALID_CREDENTIALS[user] == password:
-        user_history = get_saved_history_by_user(user)
-        badge_text = f"👤 Logado como: **{user}**"
-        
-        return (
-            gr.update(visible=False),  # login_card
-            gr.update(visible=True),   # chat_card
-            gr.update(visible=True),   # logout_btn
-            user,                      # user_state
-            badge_text,                # user_badge
-            user_history,              # chatbot
-            "",                        # error_output
-            "",                        # username_input
-            ""                         # password_input
-        )
-    
-    return (
-        gr.update(visible=True),       # login_card
-        gr.update(visible=False),      # chat_card
-        gr.update(visible=False),      # logout_btn
-        "",                            # user_state
-        "",                            # user_badge
-        [],                            # chatbot
-        "⚠️ **Usuário ou senha incorretos.** Tente novamente.",  # error_output
-        username_input,                # username_input
-        ""                             # password_input
-    )
-
-
-def logout_action():
-    """
-    Clear session state and return to login screen.
-    """
-    return (
-        gr.update(visible=True),       # login_card
-        gr.update(visible=False),      # chat_card
-        gr.update(visible=False),      # logout_btn
-        "",                            # user_state
-        "",                            # user_badge
-        [],                            # chatbot
-        "",                            # error_output
-        "",                            # username_input
-        ""                             # password_input
-    )
 
 
 def add_user_message(message: dict[str, Any], history: list[dict[str, Any]]):
@@ -182,33 +119,29 @@ def add_user_audio_message(audio_filepath: str, history: list[dict[str, Any]]):
     return history, gr.update(value=None)
 
 
-def bot_respond_stream(history: list[dict[str, Any]], username: str):
+def bot_respond_stream(
+    history: list[dict[str, Any]],
+    enable_voice: bool = False
+) -> Generator[tuple[list[dict[str, Any]], Any], None, None]:
     """
-    Stream agent text response and generate voice TTS audio playback.
+    Stream agent text response and optionally generate voice TTS audio playback.
     """
     if not history or history[-1].get("role") != "user":
         yield history, gr.update(visible=False, value=None)
         return
 
-    user_id: str = username.strip() if username else "default_user"
-    session_id: str = f"investimentos_{user_id}"
-
-    user_msg_item = history[-1]
+    session_id: str = "investimentos"
+    user_msg_item: dict[str, Any] = history[-1]
     
     raw_text: str = extract_text_content(user_msg_item.get("raw_text", user_msg_item.get("content", "")))
     file_paths: list[str] = user_msg_item.get("files", []) if isinstance(user_msg_item.get("files"), list) else []
     audio_filepath: str | None = user_msg_item.get("audio_file")
 
-    # Convert attached file paths to Agno Image objects
     agno_images: list[Image] = [Image(filepath=fp) for fp in file_paths]
-    
-    # Convert recorded audio path to Agno Audio object if present
     agno_audio: list[Audio] | None = [Audio(filepath=audio_filepath)] if audio_filepath else None
 
-    # Initialize assistant message chunk in history
     history.append({"role": "assistant", "content": ""})
 
-    # Execute agent query with streaming enabled
     response_stream: Any = agente.run(
         raw_text if raw_text else "Analise a mensagem de voz/arquivo recebido.",
         images=agno_images if agno_images else None,
@@ -227,76 +160,74 @@ def bot_respond_stream(history: list[dict[str, Any]], username: str):
         history[-1]["content"] = accumulated_text
         yield history, gr.update(visible=False, value=None)
 
-    # Synthesize final text response to voice audio (TTS)
-    voice_audio_path = generate_voice_response(accumulated_text)
-    if voice_audio_path:
-        yield history, gr.update(visible=True, value=voice_audio_path)
+    if enable_voice:
+        voice_audio_path: str | None = generate_voice_response(accumulated_text)
+        if voice_audio_path:
+            yield history, gr.update(visible=True, value=voice_audio_path)
+        else:
+            yield history, gr.update(visible=False, value=None)
     else:
         yield history, gr.update(visible=False, value=None)
 
 
-# Create Gradio UI using Blocks
-with gr.Blocks(title="Agente de Investimentos") as demo:
-    user_state = gr.State("")
+CUSTOM_CSS: str = """
+/* Maximize chatbot vertical view while leaving space for controls and footer */
+.main-chatbot {
+    height: calc(100vh - 250px) !important;
+    min-height: 480px !important;
+}
 
-    # Application Header
-    with gr.Row(equal_height=True):
+/* Compact Audio Player styling */
+.compact-audio-container {
+    max-height: 50px !important;
+    min-height: 40px !important;
+    padding: 0px !important;
+    margin: 2px 0px !important;
+}
+.compact-audio-container audio {
+    height: 36px !important;
+}
+.audio-control-row {
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+"""
+
+with gr.Blocks(title="Agente de Investimentos", fill_height=True) as demo:
+    chatbot = gr.Chatbot(
+        value=get_saved_history,
+        elem_classes=["main-chatbot"]
+    )
+
+    # Audio Controls Row: Checkbox on the left, Compact Audio player on the right
+    with gr.Row(elem_classes=["audio-control-row"], equal_height=True):
+        with gr.Column(scale=5):
+            enable_voice_checkbox = gr.Checkbox(
+                label="🔊 Gerar e reproduzir áudio da resposta",
+                value=False,
+                interactive=True
+            )
+        with gr.Column(scale=7):
+            audio_output = gr.Audio(
+                label="",
+                autoplay=True,
+                visible=False,
+                elem_classes=["compact-audio-container"],
+                container=False
+            )
+
+    # User Input Row
+    with gr.Row():
         with gr.Column(scale=8):
-            gr.Markdown("## 📈 Agente de Gestão de Investimentos")
-            gr.Markdown("Assistente virtual com inteligência financeira, busca web, análise de carteiras e voz.")
-        with gr.Column(scale=4, elem_id="header_user_area"):
-            user_badge = gr.Markdown("")
-            logout_btn = gr.Button("🚪 Sair / Logout", variant="secondary", visible=False, size="sm")
+            input_box = gr.MultimodalTextbox(
+                placeholder="Digite sua mensagem, anexe arquivos ou cole imagens (Ctrl+V)...",
+                show_label=False
+            )
+        with gr.Column(scale=4):
+            mic_input = gr.Audio(sources=["microphone"], type="filepath", label="🎙️ Gravar Voz (Microfone)")
 
-    gr.Markdown("---")
-
-    # 1. Login Card (Visible initially)
-    with gr.Column(visible=True) as login_card:
-        gr.Markdown("### 🔐 Autenticação de Acesso")
-        gr.Markdown("Digite suas credenciais para acessar sua sessão isolada de investimentos.")
-        
-        with gr.Group():
-            username_input = gr.Textbox(label="Usuário", placeholder="Ex: admin ou investidor", autofocus=True)
-            password_input = gr.Textbox(label="Senha", type="password", placeholder="Sua senha")
-            login_btn = gr.Button("🔑 Entrar", variant="primary")
-            error_output = gr.Markdown("")
-
-    # 2. Chat Application Card (Hidden initially)
-    with gr.Column(visible=False) as chat_card:
-        chatbot = gr.Chatbot(height=480)
-        
-        # Audio Player Output (Plays voice responses)
-        audio_output = gr.Audio(label="🔊 Resposta em Voz", autoplay=True, visible=False)
-        
-        with gr.Row():
-            with gr.Column(scale=8):
-                input_box = gr.MultimodalTextbox(
-                    placeholder="Digite sua mensagem, anexe arquivos ou cole imagens (Ctrl+V)...",
-                    show_label=False
-                )
-            with gr.Column(scale=4):
-                mic_input = gr.Audio(sources=["microphone"], type="filepath", label="🎙️ Gravar Voz (Microfone)")
-
-    # Login Event Bindings
-    login_btn.click(
-        fn=login_action,
-        inputs=[username_input, password_input],
-        outputs=[login_card, chat_card, logout_btn, user_state, user_badge, chatbot, error_output, username_input, password_input]
-    )
-    password_input.submit(
-        fn=login_action,
-        inputs=[username_input, password_input],
-        outputs=[login_card, chat_card, logout_btn, user_state, user_badge, chatbot, error_output, username_input, password_input]
-    )
-
-    # Logout Event Binding
-    logout_btn.click(
-        fn=logout_action,
-        inputs=None,
-        outputs=[login_card, chat_card, logout_btn, user_state, user_badge, chatbot, error_output, username_input, password_input]
-    )
-
-    # Text Input Event Binding
+    # Event Bindings
     input_box.submit(
         fn=add_user_message,
         inputs=[input_box, chatbot],
@@ -304,11 +235,10 @@ with gr.Blocks(title="Agente de Investimentos") as demo:
         queue=False
     ).then(
         fn=bot_respond_stream,
-        inputs=[chatbot, user_state],
+        inputs=[chatbot, enable_voice_checkbox],
         outputs=[chatbot, audio_output]
     )
 
-    # Microphone Audio Input Event Binding
     mic_input.change(
         fn=add_user_audio_message,
         inputs=[mic_input, chatbot],
@@ -316,7 +246,7 @@ with gr.Blocks(title="Agente de Investimentos") as demo:
         queue=False
     ).then(
         fn=bot_respond_stream,
-        inputs=[chatbot, user_state],
+        inputs=[chatbot, enable_voice_checkbox],
         outputs=[chatbot, audio_output]
     )
 
@@ -324,7 +254,9 @@ with gr.Blocks(title="Agente de Investimentos") as demo:
 if __name__ == "__main__":
     demo.launch(
         theme=gr.themes.Soft(),
+        css=CUSTOM_CSS,
         server_name="127.0.0.1",
         server_port=7860,
         share=False
     )
+
