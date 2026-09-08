@@ -9,7 +9,7 @@ from agno.db.sqlite import SqliteDb
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.knowledge.embedder.google import GeminiEmbedder
 from agno.vectordb.lancedb import LanceDb, SearchType
-from agno.knowledge.agent import AgentKnowledge
+from agno.knowledge import Knowledge
 
 from prompts import (
     INVESTMENT_AGENT_DESCRIPTION,
@@ -44,14 +44,15 @@ TABLE_NAME: str = "investimentos_knowledge"
 if not DOCUMENTS_DIR.exists():
     DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-vector_db = LanceDb(
+vector_db: LanceDb = LanceDb(
     table_name=TABLE_NAME,
     uri=LANCE_DB_DIR,
     search_type=SearchType.vector,
     embedder=GeminiEmbedder()
 )
 
-knowledge_base = AgentKnowledge(vector_db=vector_db)
+knowledge_base: Knowledge = Knowledge(vector_db=vector_db)
+
 
 storage = SqliteDb(db_file="data/agent_storage.db")
 
