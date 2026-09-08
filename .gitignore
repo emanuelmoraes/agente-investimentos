@@ -48,3 +48,8 @@ flagged/
 
 # Agents
 .agent/
+
+# Runtime Data & Vector DBs
+data/
+!data/.gitkeep
+!data/documents/.gitkeep

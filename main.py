@@ -10,6 +10,11 @@ from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.yfinance import YFinanceTools
 from agno.knowledge.filesystem import FileSystemKnowledge
 
+from prompts import (
+    INVESTMENT_AGENT_DESCRIPTION,
+    INVESTMENT_AGENT_INSTRUCTIONS,
+)
+
 load_dotenv()
 
 class SafeDuckDuckGoTools(DuckDuckGoTools):
@@ -41,20 +46,8 @@ storage = SqliteDb(db_file="data/agent_storage.db")
 
 agente = Agent(
     name="Agente de Investimentos",
-    description="Agente para gestão de investimentos",
-    instructions="""
-    Você é um agente especializado em investimentos.
-    Seu objetivo é analisar as carteiras de ações dos usuários e fornecer recomendações de investimento.
-    Você deve considerar:
-    - Perfil de risco do usuário (conservador, moderado, arrojado)
-    - Objetivos do investimento (curto prazo, médio prazo, longo prazo)
-    - Tipo de investimento (ações, renda fixa, fundos, etc)
-    - Diversificação da carteira
-    - Rentabilidade histórica
-    - Risco associado
-    Use a base de conhecimento RAG (documentos internos em data/documents), busca web (DuckDuckGo) e dados financeiros (YFinance) para responder com precisão.
-    Para ações/FIIs brasileiros no YFinance, adicione o sufixo '.SA' ao ticker (ex: BBIG11.SA, PETR4.SA).
-    """,
+    description=INVESTMENT_AGENT_DESCRIPTION,
+    instructions=INVESTMENT_AGENT_INSTRUCTIONS,
     model=Gemini("gemini-3.5-flash"),
     knowledge=knowledge_base,
     tools=[
