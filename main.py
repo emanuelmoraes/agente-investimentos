@@ -10,6 +10,8 @@ from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.knowledge.embedder.google import GeminiEmbedder
 from agno.vectordb.lancedb import LanceDb, SearchType
 from agno.knowledge import Knowledge
+from agno.tools.duckduckgo import DuckDuckGoTools
+from agno.tools.yfinance import YFinanceTools
 
 from prompts import (
     INVESTMENT_AGENT_DESCRIPTION,
